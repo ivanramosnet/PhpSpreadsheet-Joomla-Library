@@ -7,7 +7,7 @@ If you already know how to use PhpSpreadsheet and you need it for a Joomla! proj
 Download
 --------
 
-You can download the current version / older version of PhpSpreadsheet-Joomla-Library using the [PhpSpreadsheet-Joomla-Library download page](https://github.com/PHPOffice/PhpSpreadsheet/releases).
+You can download the current version / older version of PhpSpreadsheet-Joomla-Library using the [PhpSpreadsheet-Joomla-Library download page](https://github.com/ivanramosnet/PhpSpreadsheet-Joomla-Library/releases).
 
 Version
 -------
