@@ -3,12 +3,12 @@
 	<name>PhpSpreadSheet Library for Joomla</name>
 	<libraryname>phpspreadsheet</libraryname>
 	<author>Iván Ramos Jiménez</author>
-	<creationDate>June 2018</creationDate>
+	<creationDate>June 2020</creationDate>
 	<copyright>Copyright (C) 2018</copyright>
 	<license>http://www.gnu.org/licenses/gpl-2.0.html GNU/GPL</license>
 	<authorEmail>info@ivan.ramos.name</authorEmail>
 	<authorUrl>ivan.ramos.name</authorUrl>
-	<version>1.0.1</version>
+	<version>1.0.2</version>
 	<files>
         <file>phpspreadsheet.php</file>
 		<folder>vendor</folder>

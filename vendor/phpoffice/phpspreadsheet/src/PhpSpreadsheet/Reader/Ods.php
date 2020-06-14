@@ -4,10 +4,14 @@ namespace PhpOffice\PhpSpreadsheet\Reader;
 
 use DateTime;
 use DateTimeZone;
+use DOMAttr;
+use DOMDocument;
+use DOMElement;
+use DOMNode;
 use PhpOffice\PhpSpreadsheet\Calculation\Calculation;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\Cell\DataType;
-use PhpOffice\PhpSpreadsheet\Document\Properties;
+use PhpOffice\PhpSpreadsheet\Reader\Ods\Properties as DocumentProperties;
 use PhpOffice\PhpSpreadsheet\Reader\Security\XmlScanner;
 use PhpOffice\PhpSpreadsheet\RichText\RichText;
 use PhpOffice\PhpSpreadsheet\Settings;
@@ -25,7 +29,7 @@ class Ods extends BaseReader
      */
     public function __construct()
     {
-        $this->readFilter = new DefaultReadFilter();
+        parent::__construct();
         $this->securityScanner = XmlScanner::getInstance($this);
     }
 
@@ -33,8 +37,6 @@ class Ods extends BaseReader
      * Can the current IReader read the file?
      *
      * @param string $pFilename
-     *
-     * @throws Exception
      *
      * @return bool
      */
@@ -52,7 +54,7 @@ class Ods extends BaseReader
             $stat = $zip->statName('mimetype');
             if ($stat && ($stat['size'] <= 255)) {
                 $mimeType = $zip->getFromName($stat['name']);
-            } elseif ($stat = $zip->statName('META-INF/manifest.xml')) {
+            } elseif ($zip->statName('META-INF/manifest.xml')) {
                 $xml = simplexml_load_string(
                     $this->securityScanner->scan($zip->getFromName('META-INF/manifest.xml')),
                     'SimpleXMLElement',
@@ -84,8 +86,6 @@ class Ods extends BaseReader
      * Reads names of the worksheets from a file, without parsing the whole file to a PhpSpreadsheet object.
      *
      * @param string $pFilename
-     *
-     * @throws Exception
      *
      * @return string[]
      */
@@ -138,8 +138,6 @@ class Ods extends BaseReader
      * Return worksheet info (Name, Last Column Letter, Last Column Index, Total Rows, Total Columns).
      *
      * @param string $pFilename
-     *
-     * @throws Exception
      *
      * @return array
      */
@@ -233,8 +231,6 @@ class Ods extends BaseReader
      *
      * @param string $pFilename
      *
-     * @throws Exception
-     *
      * @return Spreadsheet
      */
     public function load($pFilename)
@@ -250,9 +246,6 @@ class Ods extends BaseReader
      * Loads PhpSpreadsheet from file into PhpSpreadsheet instance.
      *
      * @param string $pFilename
-     * @param Spreadsheet $spreadsheet
-     *
-     * @throws Exception
      *
      * @return Spreadsheet
      */
@@ -261,11 +254,11 @@ class Ods extends BaseReader
         File::assertFile($pFilename);
 
         $timezoneObj = new DateTimeZone('Europe/London');
-        $GMT = new \DateTimeZone('UTC');
+        $GMT = new DateTimeZone('UTC');
 
         $zip = new ZipArchive();
         if (!$zip->open($pFilename)) {
-            throw new Exception('Could not open ' . $pFilename . ' for reading! Error opening file.');
+            throw new Exception("Could not open {$pFilename} for reading! Error opening file.");
         }
 
         // Meta
@@ -275,101 +268,17 @@ class Ods extends BaseReader
             'SimpleXMLElement',
             Settings::getLibXmlLoaderOptions()
         );
+        if ($xml === false) {
+            throw new Exception('Unable to read data from {$pFilename}');
+        }
+
         $namespacesMeta = $xml->getNamespaces(true);
 
-        $docProps = $spreadsheet->getProperties();
-        $officeProperty = $xml->children($namespacesMeta['office']);
-        foreach ($officeProperty as $officePropertyData) {
-            $officePropertyDC = [];
-            if (isset($namespacesMeta['dc'])) {
-                $officePropertyDC = $officePropertyData->children($namespacesMeta['dc']);
-            }
-            foreach ($officePropertyDC as $propertyName => $propertyValue) {
-                $propertyValue = (string) $propertyValue;
-                switch ($propertyName) {
-                    case 'title':
-                        $docProps->setTitle($propertyValue);
-
-                        break;
-                    case 'subject':
-                        $docProps->setSubject($propertyValue);
-
-                        break;
-                    case 'creator':
-                        $docProps->setCreator($propertyValue);
-                        $docProps->setLastModifiedBy($propertyValue);
-
-                        break;
-                    case 'date':
-                        $creationDate = strtotime($propertyValue);
-                        $docProps->setCreated($creationDate);
-                        $docProps->setModified($creationDate);
-
-                        break;
-                    case 'description':
-                        $docProps->setDescription($propertyValue);
-
-                        break;
-                }
-            }
-            $officePropertyMeta = [];
-            if (isset($namespacesMeta['dc'])) {
-                $officePropertyMeta = $officePropertyData->children($namespacesMeta['meta']);
-            }
-            foreach ($officePropertyMeta as $propertyName => $propertyValue) {
-                $propertyValueAttributes = $propertyValue->attributes($namespacesMeta['meta']);
-                $propertyValue = (string) $propertyValue;
-                switch ($propertyName) {
-                    case 'initial-creator':
-                        $docProps->setCreator($propertyValue);
-
-                        break;
-                    case 'keyword':
-                        $docProps->setKeywords($propertyValue);
-
-                        break;
-                    case 'creation-date':
-                        $creationDate = strtotime($propertyValue);
-                        $docProps->setCreated($creationDate);
-
-                        break;
-                    case 'user-defined':
-                        $propertyValueType = Properties::PROPERTY_TYPE_STRING;
-                        foreach ($propertyValueAttributes as $key => $value) {
-                            if ($key == 'name') {
-                                $propertyValueName = (string) $value;
-                            } elseif ($key == 'value-type') {
-                                switch ($value) {
-                                    case 'date':
-                                        $propertyValue = Properties::convertProperty($propertyValue, 'date');
-                                        $propertyValueType = Properties::PROPERTY_TYPE_DATE;
-
-                                        break;
-                                    case 'boolean':
-                                        $propertyValue = Properties::convertProperty($propertyValue, 'bool');
-                                        $propertyValueType = Properties::PROPERTY_TYPE_BOOLEAN;
-
-                                        break;
-                                    case 'float':
-                                        $propertyValue = Properties::convertProperty($propertyValue, 'r4');
-                                        $propertyValueType = Properties::PROPERTY_TYPE_FLOAT;
-
-                                        break;
-                                    default:
-                                        $propertyValueType = Properties::PROPERTY_TYPE_STRING;
-                                }
-                            }
-                        }
-                        $docProps->setCustomProperty($propertyValueName, $propertyValue, $propertyValueType);
-
-                        break;
-                }
-            }
-        }
+        (new DocumentProperties($spreadsheet))->load($xml, $namespacesMeta);
 
         // Content
 
-        $dom = new \DOMDocument('1.01', 'UTF-8');
+        $dom = new DOMDocument('1.01', 'UTF-8');
         $dom->loadXML(
             $this->securityScanner->scan($zip->getFromName('content.xml')),
             Settings::getLibXmlLoaderOptions()
@@ -385,12 +294,12 @@ class Ods extends BaseReader
             ->getElementsByTagNameNS($officeNs, 'spreadsheet');
 
         foreach ($spreadsheets as $workbookData) {
-            /** @var \DOMElement $workbookData */
+            /** @var DOMElement $workbookData */
             $tables = $workbookData->getElementsByTagNameNS($tableNs, 'table');
 
             $worksheetID = 0;
             foreach ($tables as $worksheetDataSet) {
-                /** @var \DOMElement $worksheetDataSet */
+                /** @var DOMElement $worksheetDataSet */
                 $worksheetName = $worksheetDataSet->getAttributeNS($tableNs, 'name');
 
                 // Check loadSheetsOnly
@@ -416,7 +325,7 @@ class Ods extends BaseReader
                 // Go through every child of table element
                 $rowID = 1;
                 foreach ($worksheetDataSet->childNodes as $childNode) {
-                    /** @var \DOMElement $childNode */
+                    /** @var DOMElement $childNode */
 
                     // Filter elements which are not under the "table" ns
                     if ($childNode->namespaceURI != $tableNs) {
@@ -489,11 +398,11 @@ class Ods extends BaseReader
 
                                 // Content
 
-                                /** @var \DOMElement[] $paragraphs */
+                                /** @var DOMElement[] $paragraphs */
                                 $paragraphs = [];
 
                                 foreach ($cellData->childNodes as $item) {
-                                    /** @var \DOMElement $item */
+                                    /** @var DOMElement $item */
 
                                     // Filter text:p elements
                                     if ($item->nodeName == 'text:p') {
@@ -513,7 +422,7 @@ class Ods extends BaseReader
                                     foreach ($paragraphs as $pData) {
                                         $dataArray[] = $this->scanElementForText($pData);
                                     }
-                                    $allCellDataText = implode($dataArray, "\n");
+                                    $allCellDataText = implode("\n", $dataArray);
 
                                     $type = $cellData->getAttributeNS($officeNs, 'value-type');
 
@@ -574,18 +483,18 @@ class Ods extends BaseReader
 
                                             $dateObj = new DateTime($value, $GMT);
                                             $dateObj->setTimeZone($timezoneObj);
-                                            list($year, $month, $day, $hour, $minute, $second) = explode(
+                                            [$year, $month, $day, $hour, $minute, $second] = explode(
                                                 ' ',
                                                 $dateObj->format('Y m d H i s')
                                             );
 
                                             $dataValue = Date::formattedPHPToExcel(
-                                                $year,
-                                                $month,
-                                                $day,
-                                                $hour,
-                                                $minute,
-                                                $second
+                                                (int) $year,
+                                                (int) $month,
+                                                (int) $day,
+                                                (int) $hour,
+                                                (int) $minute,
+                                                (int) $second
                                             );
 
                                             if ($dataValue != floor($dataValue)) {
@@ -743,22 +652,20 @@ class Ods extends BaseReader
     /**
      * Recursively scan element.
      *
-     * @param \DOMNode $element
-     *
      * @return string
      */
-    protected function scanElementForText(\DOMNode $element)
+    protected function scanElementForText(DOMNode $element)
     {
         $str = '';
         foreach ($element->childNodes as $child) {
-            /** @var \DOMNode $child */
+            /** @var DOMNode $child */
             if ($child->nodeType == XML_TEXT_NODE) {
                 $str .= $child->nodeValue;
             } elseif ($child->nodeType == XML_ELEMENT_NODE && $child->nodeName == 'text:s') {
                 // It's a space
 
                 // Multiple spaces?
-                /** @var \DOMAttr $cAttr */
+                /** @var DOMAttr $cAttr */
                 $cAttr = $child->attributes->getNamedItem('c');
                 if ($cAttr) {
                     $multiplier = (int) $cAttr->nodeValue;

@@ -36,7 +36,7 @@ class Gnumeric extends BaseReader
      */
     public function __construct()
     {
-        $this->readFilter = new DefaultReadFilter();
+        parent::__construct();
         $this->referenceHelper = ReferenceHelper::getInstance();
         $this->securityScanner = XmlScanner::getInstance($this);
     }
@@ -45,8 +45,6 @@ class Gnumeric extends BaseReader
      * Can the current IReader read the file?
      *
      * @param string $pFilename
-     *
-     * @throws Exception
      *
      * @return bool
      */
@@ -60,7 +58,7 @@ class Gnumeric extends BaseReader
         }
 
         // Read signature data (first 3 bytes)
-        $fh = fopen($pFilename, 'r');
+        $fh = fopen($pFilename, 'rb');
         $data = fread($fh, 2);
         fclose($fh);
 
@@ -169,8 +167,6 @@ class Gnumeric extends BaseReader
      *
      * @param string $pFilename
      *
-     * @throws Exception
-     *
      * @return Spreadsheet
      */
     public function load($pFilename)
@@ -186,9 +182,6 @@ class Gnumeric extends BaseReader
      * Loads from file into Spreadsheet instance.
      *
      * @param string $pFilename
-     * @param Spreadsheet $spreadsheet
-     *
-     * @throws Exception
      *
      * @return Spreadsheet
      */
@@ -267,7 +260,7 @@ class Gnumeric extends BaseReader
 
                             break;
                         case 'user-defined':
-                            list(, $attrName) = explode(':', $attributes['name']);
+                            [, $attrName] = explode(':', $attributes['name']);
                             switch ($attrName) {
                                 case 'publisher':
                                     $docProps->setCompany(trim($propertyValue));
@@ -479,7 +472,7 @@ class Gnumeric extends BaseReader
                     $endColumn = ($styleAttributes['endCol'] > $maxCol) ? $maxCol : (int) $styleAttributes['endCol'];
                     $endColumn = Coordinate::stringFromColumnIndex($endColumn + 1);
                     $endRow = ($styleAttributes['endRow'] > $maxRow) ? $maxRow : $styleAttributes['endRow'];
-                    $endRow += 1;
+                    ++$endRow;
                     $cellRange = $startColumn . $startRow . ':' . $endColumn . $endRow;
 
                     $styleAttributes = $styleRegion->Style->attributes();
@@ -879,7 +872,7 @@ class Gnumeric extends BaseReader
 
     private static function parseGnumericColour($gnmColour)
     {
-        list($gnmR, $gnmG, $gnmB) = explode(':', $gnmColour);
+        [$gnmR, $gnmG, $gnmB] = explode(':', $gnmColour);
         $gnmR = substr(str_pad($gnmR, 4, '0', STR_PAD_RIGHT), 0, 2);
         $gnmG = substr(str_pad($gnmG, 4, '0', STR_PAD_RIGHT), 0, 2);
         $gnmB = substr(str_pad($gnmB, 4, '0', STR_PAD_RIGHT), 0, 2);
