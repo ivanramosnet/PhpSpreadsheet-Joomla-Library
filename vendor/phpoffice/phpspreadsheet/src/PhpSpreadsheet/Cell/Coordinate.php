@@ -25,8 +25,6 @@ abstract class Coordinate
      *
      * @param string $pCoordinateString eg: 'A1'
      *
-     * @throws Exception
-     *
      * @return string[] Array containing column and row (indexes 0 and 1)
      */
     public static function coordinateFromString($pCoordinateString)
@@ -60,8 +58,6 @@ abstract class Coordinate
      * @param string $pCoordinateString e.g. 'A' or '1' or 'A1'
      *                    Note that this value can be a row or column reference as well as a cell reference
      *
-     * @throws Exception
-     *
      * @return string Absolute coordinate        e.g. '$A' or '$1' or '$A$1'
      */
     public static function absoluteReference($pCoordinateString)
@@ -71,7 +67,7 @@ abstract class Coordinate
         }
 
         // Split out any worksheet name from the reference
-        list($worksheet, $pCoordinateString) = Worksheet::extractSheetTitle($pCoordinateString, true);
+        [$worksheet, $pCoordinateString] = Worksheet::extractSheetTitle($pCoordinateString, true);
         if ($worksheet > '') {
             $worksheet .= '!';
         }
@@ -91,8 +87,6 @@ abstract class Coordinate
      *
      * @param string $pCoordinateString e.g. 'A1'
      *
-     * @throws Exception
-     *
      * @return string Absolute coordinate        e.g. '$A$1'
      */
     public static function absoluteCoordinate($pCoordinateString)
@@ -102,13 +96,13 @@ abstract class Coordinate
         }
 
         // Split out any worksheet name from the coordinate
-        list($worksheet, $pCoordinateString) = Worksheet::extractSheetTitle($pCoordinateString, true);
+        [$worksheet, $pCoordinateString] = Worksheet::extractSheetTitle($pCoordinateString, true);
         if ($worksheet > '') {
             $worksheet .= '!';
         }
 
         // Create absolute coordinate
-        list($column, $row) = self::coordinateFromString($pCoordinateString);
+        [$column, $row] = self::coordinateFromString($pCoordinateString);
         $column = ltrim($column, '$');
         $row = ltrim($row, '$');
 
@@ -145,8 +139,6 @@ abstract class Coordinate
      *
      * @param array $pRange Array containg one or more arrays containing one or two coordinate strings
      *
-     * @throws Exception
-     *
      * @return string String representation of $pRange
      */
     public static function buildRange(array $pRange)
@@ -157,14 +149,12 @@ abstract class Coordinate
         }
 
         // Build range
-        $imploded = [];
         $counter = count($pRange);
         for ($i = 0; $i < $counter; ++$i) {
             $pRange[$i] = implode(':', $pRange[$i]);
         }
-        $imploded = implode(',', $pRange);
 
-        return $imploded;
+        return implode(',', $pRange);
     }
 
     /**
@@ -189,7 +179,7 @@ abstract class Coordinate
         if (strpos($pRange, ':') === false) {
             $rangeA = $rangeB = $pRange;
         } else {
-            list($rangeA, $rangeB) = explode(':', $pRange);
+            [$rangeA, $rangeB] = explode(':', $pRange);
         }
 
         // Calculate range outer borders
@@ -213,7 +203,7 @@ abstract class Coordinate
     public static function rangeDimension($pRange)
     {
         // Calculate range outer borders
-        list($rangeStart, $rangeEnd) = self::rangeBoundaries($pRange);
+        [$rangeStart, $rangeEnd] = self::rangeBoundaries($pRange);
 
         return [($rangeEnd[0] - $rangeStart[0] + 1), ($rangeEnd[1] - $rangeStart[1] + 1)];
     }
@@ -240,7 +230,7 @@ abstract class Coordinate
         if (strpos($pRange, ':') === false) {
             $rangeA = $rangeB = $pRange;
         } else {
-            list($rangeA, $rangeB) = explode(':', $pRange);
+            [$rangeA, $rangeB] = explode(':', $pRange);
         }
 
         return [self::coordinateFromString($rangeA), self::coordinateFromString($rangeB)];
@@ -378,9 +368,9 @@ abstract class Coordinate
             }
 
             // Range...
-            list($rangeStart, $rangeEnd) = $range;
-            list($startColumn, $startRow) = self::coordinateFromString($rangeStart);
-            list($endColumn, $endRow) = self::coordinateFromString($rangeEnd);
+            [$rangeStart, $rangeEnd] = $range;
+            [$startColumn, $startRow] = self::coordinateFromString($rangeStart);
+            [$endColumn, $endRow] = self::coordinateFromString($rangeEnd);
             $startColumnIndex = self::columnIndexFromString($startColumn);
             $endColumnIndex = self::columnIndexFromString($endColumn);
             ++$endColumnIndex;
@@ -434,7 +424,7 @@ abstract class Coordinate
                 continue;
             }
 
-            list($column, $row) = self::coordinateFromString($coord);
+            [$column, $row] = self::coordinateFromString($coord);
             $row = (int) (ltrim($row, '$'));
             $hashCode = $column . '-' . (is_object($value) ? $value->getHashCode() : $value);
 
@@ -513,7 +503,7 @@ abstract class Coordinate
      * @param int $currentRow
      * @param int $endRow
      */
-    private static function validateRange($cellBlock, $startColumnIndex, $endColumnIndex, $currentRow, $endRow)
+    private static function validateRange($cellBlock, $startColumnIndex, $endColumnIndex, $currentRow, $endRow): void
     {
         if ($startColumnIndex >= $endColumnIndex || $currentRow > $endRow) {
             throw new Exception('Invalid range: "' . $cellBlock . '"');

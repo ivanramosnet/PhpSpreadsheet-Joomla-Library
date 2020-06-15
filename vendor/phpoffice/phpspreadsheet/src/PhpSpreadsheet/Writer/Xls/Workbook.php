@@ -222,7 +222,6 @@ class Workbook extends BIFFwriter
     /**
      * Add a new XF writer.
      *
-     * @param Style $style
      * @param bool $isStyleXf Is it a style XF?
      *
      * @return int Index to XF record
@@ -267,15 +266,11 @@ class Workbook extends BIFFwriter
 
         $this->xfWriters[] = $xfWriter;
 
-        $xfIndex = count($this->xfWriters) - 1;
-
-        return $xfIndex;
+        return count($this->xfWriters) - 1;
     }
 
     /**
      * Add a font to added fonts.
-     *
-     * @param \PhpOffice\PhpSpreadsheet\Style\Font $font
      *
      * @return int Index to FONT record
      */
@@ -319,7 +314,7 @@ class Workbook extends BIFFwriter
             if ($colorIndex) {
                 $this->colors[$rgb] = $colorIndex;
             } else {
-                if (count($this->colors) == 0) {
+                if (count($this->colors) === 0) {
                     $lastColor = 7;
                 } else {
                     $lastColor = end($this->colors);
@@ -345,7 +340,7 @@ class Workbook extends BIFFwriter
     /**
      * Sets the colour palette to the Excel 97+ default.
      */
-    private function setPaletteXl97()
+    private function setPaletteXl97(): void
     {
         $this->palette = [
             0x08 => [0x00, 0x00, 0x00, 0x00],
@@ -437,7 +432,7 @@ class Workbook extends BIFFwriter
 
         // Prepare part 3 of the workbook global stream, what goes after the SHEET records
         $part3 = '';
-        if ($this->countryCode != -1) {
+        if ($this->countryCode !== -1) {
             $part3 .= $this->writeCountry();
         }
         $part3 .= $this->writeRecalcId();
@@ -467,7 +462,7 @@ class Workbook extends BIFFwriter
     /**
      * Calculate offsets for Worksheet BOF records.
      */
-    private function calcSheetOffsets()
+    private function calcSheetOffsets(): void
     {
         $boundsheet_length = 10; // fixed length for a BOUNDSHEET record
 
@@ -491,7 +486,7 @@ class Workbook extends BIFFwriter
     /**
      * Store the Excel FONT records.
      */
-    private function writeAllFonts()
+    private function writeAllFonts(): void
     {
         foreach ($this->fontWriters as $fontWriter) {
             $this->append($fontWriter->writeFont());
@@ -501,7 +496,7 @@ class Workbook extends BIFFwriter
     /**
      * Store user defined numerical formats i.e. FORMAT records.
      */
-    private function writeAllNumberFormats()
+    private function writeAllNumberFormats(): void
     {
         foreach ($this->numberFormats as $numberFormatIndex => $numberFormat) {
             $this->writeNumberFormat($numberFormat->getFormatCode(), $numberFormatIndex);
@@ -511,7 +506,7 @@ class Workbook extends BIFFwriter
     /**
      * Write all XF records.
      */
-    private function writeAllXfs()
+    private function writeAllXfs(): void
     {
         foreach ($this->xfWriters as $xfWriter) {
             $this->append($xfWriter->writeXf());
@@ -521,7 +516,7 @@ class Workbook extends BIFFwriter
     /**
      * Write all STYLE records.
      */
-    private function writeAllStyles()
+    private function writeAllStyles(): void
     {
         $this->writeStyle();
     }
@@ -556,7 +551,7 @@ class Workbook extends BIFFwriter
                     $formulaData = $this->parser->toReversePolish();
 
                     // make sure tRef3d is of type tRef3dR (0x3A)
-                    if (isset($formulaData[0]) and ($formulaData[0] == "\x7A" or $formulaData[0] == "\x5A")) {
+                    if (isset($formulaData[0]) && ($formulaData[0] == "\x7A" || $formulaData[0] == "\x5A")) {
                         $formulaData = "\x3A" . substr($formulaData, 1);
                     }
 
@@ -756,7 +751,7 @@ class Workbook extends BIFFwriter
     /**
      * Stores the CODEPAGE biff record.
      */
-    private function writeCodepage()
+    private function writeCodepage(): void
     {
         $record = 0x0042; // Record identifier
         $length = 0x0002; // Number of bytes to follow
@@ -771,7 +766,7 @@ class Workbook extends BIFFwriter
     /**
      * Write Excel BIFF WINDOW1 record.
      */
-    private function writeWindow1()
+    private function writeWindow1(): void
     {
         $record = 0x003D; // Record identifier
         $length = 0x0012; // Number of bytes to follow
@@ -803,7 +798,7 @@ class Workbook extends BIFFwriter
      * @param Worksheet $sheet Worksheet name
      * @param int $offset Location of worksheet BOF
      */
-    private function writeBoundSheet($sheet, $offset)
+    private function writeBoundSheet($sheet, $offset): void
     {
         $sheetname = $sheet->getTitle();
         $record = 0x0085; // Record identifier
@@ -878,7 +873,7 @@ class Workbook extends BIFFwriter
     /**
      * Write Excel BIFF STYLE records.
      */
-    private function writeStyle()
+    private function writeStyle(): void
     {
         $record = 0x0293; // Record identifier
         $length = 0x0004; // Bytes to follow
@@ -898,7 +893,7 @@ class Workbook extends BIFFwriter
      * @param string $format Custom format string
      * @param int $ifmt Format index code
      */
-    private function writeNumberFormat($format, $ifmt)
+    private function writeNumberFormat($format, $ifmt): void
     {
         $record = 0x041E; // Record identifier
 
@@ -913,12 +908,12 @@ class Workbook extends BIFFwriter
     /**
      * Write DATEMODE record to indicate the date system in use (1904 or 1900).
      */
-    private function writeDateMode()
+    private function writeDateMode(): void
     {
         $record = 0x0022; // Record identifier
         $length = 0x0002; // Bytes to follow
 
-        $f1904 = (Date::getExcelCalendar() == Date::CALENDAR_MAC_1904)
+        $f1904 = (Date::getExcelCalendar() === Date::CALENDAR_MAC_1904)
             ? 1
             : 0; // Flag for 1904 date system
 
@@ -965,7 +960,7 @@ class Workbook extends BIFFwriter
     /**
      * Stores the PALETTE biff record.
      */
-    private function writePalette()
+    private function writePalette(): void
     {
         $aref = $this->palette;
 
@@ -1145,7 +1140,7 @@ class Workbook extends BIFFwriter
      *
      * @param \PhpOffice\PhpSpreadsheet\Shared\Escher $pValue
      */
-    public function setEscher(\PhpOffice\PhpSpreadsheet\Shared\Escher $pValue = null)
+    public function setEscher(?\PhpOffice\PhpSpreadsheet\Shared\Escher $pValue = null): void
     {
         $this->escher = $pValue;
     }

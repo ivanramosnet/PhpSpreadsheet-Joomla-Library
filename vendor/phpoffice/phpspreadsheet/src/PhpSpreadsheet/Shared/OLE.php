@@ -38,8 +38,6 @@ $GLOBALS['_OLE_INSTANCES'] = [];
  *
  * @author   Xavier Noguer <xnoguer@php.net>
  * @author   Christian Schmidt <schmidt@php.net>
- *
- * @category   PhpSpreadsheet
  */
 class OLE
 {
@@ -113,13 +111,11 @@ class OLE
      *
      * @param string $file
      *
-     * @throws ReaderException
-     *
      * @return bool true on success, PEAR_Error on failure
      */
     public function read($file)
     {
-        $fh = fopen($file, 'r');
+        $fh = fopen($file, 'rb');
         if (!$fh) {
             throw new ReaderException("Can't open file $file");
         }
@@ -135,8 +131,8 @@ class OLE
             throw new ReaderException('Only Little-Endian encoding is supported.');
         }
         // Size of blocks and short blocks in bytes
-        $this->bigBlockSize = pow(2, self::_readInt2($fh));
-        $this->smallBlockSize = pow(2, self::_readInt2($fh));
+        $this->bigBlockSize = 2 ** self::_readInt2($fh);
+        $this->smallBlockSize = 2 ** self::_readInt2($fh);
 
         // Skip UID, revision number and version number
         fseek($fh, 44);
@@ -241,7 +237,7 @@ class OLE
             $path .= '&blockId=' . $blockIdOrPps;
         }
 
-        return fopen($path, 'r');
+        return fopen($path, 'rb');
     }
 
     /**
@@ -253,7 +249,7 @@ class OLE
      */
     private static function _readInt1($fh)
     {
-        list(, $tmp) = unpack('c', fread($fh, 1));
+        [, $tmp] = unpack('c', fread($fh, 1));
 
         return $tmp;
     }
@@ -267,7 +263,7 @@ class OLE
      */
     private static function _readInt2($fh)
     {
-        list(, $tmp) = unpack('v', fread($fh, 2));
+        [, $tmp] = unpack('v', fread($fh, 2));
 
         return $tmp;
     }
@@ -281,7 +277,7 @@ class OLE
      */
     private static function _readInt4($fh)
     {
-        list(, $tmp) = unpack('V', fread($fh, 4));
+        [, $tmp] = unpack('V', fread($fh, 4));
 
         return $tmp;
     }
@@ -504,7 +500,7 @@ class OLE
         }
 
         // factor used for separating numbers into 4 bytes parts
-        $factor = pow(2, 32);
+        $factor = 2 ** 32;
 
         // days from 1-1-1601 until the beggining of UNIX era
         $days = 134774;
@@ -537,31 +533,35 @@ class OLE
     /**
      * Returns a timestamp from an OLE container's date.
      *
-     * @param int $string A binary string with the encoded date
+     * @param string $oleTimestamp A binary string with the encoded date
      *
-     * @return string The timestamp corresponding to the string
+     * @return int The Unix timestamp corresponding to the string
      */
-    public static function OLE2LocalDate($string)
+    public static function OLE2LocalDate($oleTimestamp)
     {
-        if (strlen($string) != 8) {
+        if (strlen($oleTimestamp) != 8) {
             throw new ReaderException('Expecting 8 byte string');
         }
 
-        // factor used for separating numbers into 4 bytes parts
-        $factor = pow(2, 32);
-        list(, $high_part) = unpack('V', substr($string, 4, 4));
-        list(, $low_part) = unpack('V', substr($string, 0, 4));
+        // convert to units of 100 ns since 1601:
+        $unpackedTimestamp = unpack('v4', $oleTimestamp);
+        $timestampHigh = (float) $unpackedTimestamp[4] * 65536 + (float) $unpackedTimestamp[3];
+        $timestampLow = (float) $unpackedTimestamp[2] * 65536 + (float) $unpackedTimestamp[1];
 
-        $big_date = ($high_part * $factor) + $low_part;
-        // translate to seconds
-        $big_date /= 10000000;
+        // translate to seconds since 1601:
+        $timestampHigh /= 10000000;
+        $timestampLow /= 10000000;
 
-        // days from 1-1-1601 until the beggining of UNIX era
+        // days from 1601 to 1970:
         $days = 134774;
 
-        // translate to seconds from beggining of UNIX era
-        $big_date -= $days * 24 * 3600;
+        // translate to seconds since 1970:
+        $unixTimestamp = floor(65536.0 * 65536.0 * $timestampHigh + $timestampLow - $days * 24 * 3600 + 0.5);
 
-        return floor($big_date);
+        if ((int) $unixTimestamp == $unixTimestamp) {
+            return (int) $unixTimestamp;
+        }
+
+        return $unixTimestamp >= 0.0 ? PHP_INT_MAX : PHP_INT_MIN;
     }
 }

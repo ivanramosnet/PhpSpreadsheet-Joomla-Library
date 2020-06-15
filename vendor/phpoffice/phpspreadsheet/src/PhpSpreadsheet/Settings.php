@@ -25,6 +25,17 @@ class Settings
     private static $libXmlLoaderOptions = null;
 
     /**
+     * Allow/disallow libxml_disable_entity_loader() call when not thread safe.
+     * Default behaviour is to do the check, but if you're running PHP versions
+     *      7.2 < 7.2.1
+     * then you may need to disable this check to prevent unwanted behaviour in other threads
+     * SECURITY WARNING: Changing this flag is not recommended.
+     *
+     * @var bool
+     */
+    private static $libXmlDisableEntityLoader = true;
+
+    /**
      * The cache implementation to be used for cell collection.
      *
      * @var CacheInterface
@@ -48,10 +59,8 @@ class Settings
      *
      * @param string $rendererClass Class name of the chart renderer
      *    eg: PhpOffice\PhpSpreadsheet\Chart\Renderer\JpGraph
-     *
-     * @throws Exception
      */
-    public static function setChartRenderer($rendererClass)
+    public static function setChartRenderer($rendererClass): void
     {
         if (!is_a($rendererClass, IRenderer::class, true)) {
             throw new Exception('Chart renderer must implement ' . IRenderer::class);
@@ -76,7 +85,7 @@ class Settings
      *
      * @param int $options Default options for libxml loader
      */
-    public static function setLibXmlLoaderOptions($options)
+    public static function setLibXmlLoaderOptions($options): void
     {
         if ($options === null && defined('LIBXML_DTDLOAD')) {
             $options = LIBXML_DTDLOAD | LIBXML_DTDATTR;
@@ -102,11 +111,34 @@ class Settings
     }
 
     /**
-     * Sets the implementation of cache that should be used for cell collection.
+     * Enable/Disable the entity loader for libxml loader.
+     * Allow/disallow libxml_disable_entity_loader() call when not thread safe.
+     * Default behaviour is to do the check, but if you're running PHP versions
+     *      7.2 < 7.2.1
+     * then you may need to disable this check to prevent unwanted behaviour in other threads
+     * SECURITY WARNING: Changing this flag to false is not recommended.
      *
-     * @param CacheInterface $cache
+     * @param bool $state
      */
-    public static function setCache(CacheInterface $cache)
+    public static function setLibXmlDisableEntityLoader($state): void
+    {
+        self::$libXmlDisableEntityLoader = (bool) $state;
+    }
+
+    /**
+     * Return the state of the entity loader (disabled/enabled) for libxml loader.
+     *
+     * @return bool $state
+     */
+    public static function getLibXmlDisableEntityLoader()
+    {
+        return self::$libXmlDisableEntityLoader;
+    }
+
+    /**
+     * Sets the implementation of cache that should be used for cell collection.
+     */
+    public static function setCache(CacheInterface $cache): void
     {
         self::$cache = $cache;
     }

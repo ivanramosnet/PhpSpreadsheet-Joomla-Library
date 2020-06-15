@@ -12,7 +12,7 @@ You can download the current version / older version of PhpSpreadsheet-Joomla-Li
 Version
 -------
 
-* The current Joomla! Library is using PhpSpreadsheet 1.6.0.
+* The current Joomla! Library is using PhpSpreadsheet 1.13.0.
 
 Usage
 -----
