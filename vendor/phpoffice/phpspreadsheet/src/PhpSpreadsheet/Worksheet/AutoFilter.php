@@ -3,7 +3,7 @@
 namespace PhpOffice\PhpSpreadsheet\Worksheet;
 
 use PhpOffice\PhpSpreadsheet\Calculation\Calculation;
-use PhpOffice\PhpSpreadsheet\Calculation\DateTime;
+use PhpOffice\PhpSpreadsheet\Calculation\DateTimeExcel;
 use PhpOffice\PhpSpreadsheet\Calculation\Functions;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\Exception as PhpSpreadsheetException;
@@ -14,7 +14,7 @@ class AutoFilter
     /**
      * Autofilter Worksheet.
      *
-     * @var Worksheet
+     * @var null|Worksheet
      */
     private $workSheet;
 
@@ -47,7 +47,7 @@ class AutoFilter
     /**
      * Get AutoFilter Parent Worksheet.
      *
-     * @return Worksheet
+     * @return null|Worksheet
      */
     public function getParent()
     {
@@ -472,7 +472,7 @@ class AutoFilter
         $val = $maxVal = null;
 
         $ruleValues = [];
-        $baseDate = DateTime::DATENOW();
+        $baseDate = DateTimeExcel\Current::now();
         //    Calculate start/end dates for the required date range based on current date
         switch ($dynamicRuleType) {
             case AutoFilter\Column\Rule::AUTOFILTER_RULETYPE_DYNAMIC_LASTWEEK:
@@ -595,7 +595,9 @@ class AutoFilter
             sort($dataValues);
         }
 
-        return array_pop(array_slice($dataValues, 0, $ruleValue));
+        $slice = array_slice($dataValues, 0, $ruleValue);
+
+        return array_pop($slice);
     }
 
     /**
@@ -643,28 +645,40 @@ class AutoFilter
                         ];
                         foreach ($ruleDataSet as $ruleValue) {
                             $date = $time = '';
-                            if ((isset($ruleValue[AutoFilter\Column\Rule::AUTOFILTER_RULETYPE_DATEGROUP_YEAR])) &&
-                                ($ruleValue[AutoFilter\Column\Rule::AUTOFILTER_RULETYPE_DATEGROUP_YEAR] !== '')) {
+                            if (
+                                (isset($ruleValue[AutoFilter\Column\Rule::AUTOFILTER_RULETYPE_DATEGROUP_YEAR])) &&
+                                ($ruleValue[AutoFilter\Column\Rule::AUTOFILTER_RULETYPE_DATEGROUP_YEAR] !== '')
+                            ) {
                                 $date .= sprintf('%04d', $ruleValue[AutoFilter\Column\Rule::AUTOFILTER_RULETYPE_DATEGROUP_YEAR]);
                             }
-                            if ((isset($ruleValue[AutoFilter\Column\Rule::AUTOFILTER_RULETYPE_DATEGROUP_MONTH])) &&
-                                ($ruleValue[AutoFilter\Column\Rule::AUTOFILTER_RULETYPE_DATEGROUP_MONTH] != '')) {
+                            if (
+                                (isset($ruleValue[AutoFilter\Column\Rule::AUTOFILTER_RULETYPE_DATEGROUP_MONTH])) &&
+                                ($ruleValue[AutoFilter\Column\Rule::AUTOFILTER_RULETYPE_DATEGROUP_MONTH] != '')
+                            ) {
                                 $date .= sprintf('%02d', $ruleValue[AutoFilter\Column\Rule::AUTOFILTER_RULETYPE_DATEGROUP_MONTH]);
                             }
-                            if ((isset($ruleValue[AutoFilter\Column\Rule::AUTOFILTER_RULETYPE_DATEGROUP_DAY])) &&
-                                ($ruleValue[AutoFilter\Column\Rule::AUTOFILTER_RULETYPE_DATEGROUP_DAY] !== '')) {
+                            if (
+                                (isset($ruleValue[AutoFilter\Column\Rule::AUTOFILTER_RULETYPE_DATEGROUP_DAY])) &&
+                                ($ruleValue[AutoFilter\Column\Rule::AUTOFILTER_RULETYPE_DATEGROUP_DAY] !== '')
+                            ) {
                                 $date .= sprintf('%02d', $ruleValue[AutoFilter\Column\Rule::AUTOFILTER_RULETYPE_DATEGROUP_DAY]);
                             }
-                            if ((isset($ruleValue[AutoFilter\Column\Rule::AUTOFILTER_RULETYPE_DATEGROUP_HOUR])) &&
-                                ($ruleValue[AutoFilter\Column\Rule::AUTOFILTER_RULETYPE_DATEGROUP_HOUR] !== '')) {
+                            if (
+                                (isset($ruleValue[AutoFilter\Column\Rule::AUTOFILTER_RULETYPE_DATEGROUP_HOUR])) &&
+                                ($ruleValue[AutoFilter\Column\Rule::AUTOFILTER_RULETYPE_DATEGROUP_HOUR] !== '')
+                            ) {
                                 $time .= sprintf('%02d', $ruleValue[AutoFilter\Column\Rule::AUTOFILTER_RULETYPE_DATEGROUP_HOUR]);
                             }
-                            if ((isset($ruleValue[AutoFilter\Column\Rule::AUTOFILTER_RULETYPE_DATEGROUP_MINUTE])) &&
-                                ($ruleValue[AutoFilter\Column\Rule::AUTOFILTER_RULETYPE_DATEGROUP_MINUTE] !== '')) {
+                            if (
+                                (isset($ruleValue[AutoFilter\Column\Rule::AUTOFILTER_RULETYPE_DATEGROUP_MINUTE])) &&
+                                ($ruleValue[AutoFilter\Column\Rule::AUTOFILTER_RULETYPE_DATEGROUP_MINUTE] !== '')
+                            ) {
                                 $time .= sprintf('%02d', $ruleValue[AutoFilter\Column\Rule::AUTOFILTER_RULETYPE_DATEGROUP_MINUTE]);
                             }
-                            if ((isset($ruleValue[AutoFilter\Column\Rule::AUTOFILTER_RULETYPE_DATEGROUP_SECOND])) &&
-                                ($ruleValue[AutoFilter\Column\Rule::AUTOFILTER_RULETYPE_DATEGROUP_SECOND] !== '')) {
+                            if (
+                                (isset($ruleValue[AutoFilter\Column\Rule::AUTOFILTER_RULETYPE_DATEGROUP_SECOND])) &&
+                                ($ruleValue[AutoFilter\Column\Rule::AUTOFILTER_RULETYPE_DATEGROUP_SECOND] !== '')
+                            ) {
                                 $time .= sprintf('%02d', $ruleValue[AutoFilter\Column\Rule::AUTOFILTER_RULETYPE_DATEGROUP_SECOND]);
                             }
                             $dateTime = $date . $time;
@@ -712,8 +726,10 @@ class AutoFilter
                     foreach ($rules as $rule) {
                         //    We should only ever have one Dynamic Filter Rule anyway
                         $dynamicRuleType = $rule->getGrouping();
-                        if (($dynamicRuleType == AutoFilter\Column\Rule::AUTOFILTER_RULETYPE_DYNAMIC_ABOVEAVERAGE) ||
-                            ($dynamicRuleType == AutoFilter\Column\Rule::AUTOFILTER_RULETYPE_DYNAMIC_BELOWAVERAGE)) {
+                        if (
+                            ($dynamicRuleType == AutoFilter\Column\Rule::AUTOFILTER_RULETYPE_DYNAMIC_ABOVEAVERAGE) ||
+                            ($dynamicRuleType == AutoFilter\Column\Rule::AUTOFILTER_RULETYPE_DYNAMIC_BELOWAVERAGE)
+                        ) {
                             //    Number (Average) based
                             //    Calculate the average
                             $averageFormula = '=AVERAGE(' . $columnID . ($rangeStart[1] + 1) . ':' . $columnID . $rangeEnd[1] . ')';
@@ -763,6 +779,9 @@ class AutoFilter
                 case AutoFilter\Column::AUTOFILTER_FILTERTYPE_TOPTENFILTER:
                     $ruleValues = [];
                     $dataRowCount = $rangeEnd[1] - $rangeStart[1];
+                    $toptenRuleType = null;
+                    $ruleValue = 0;
+                    $ruleOperator = null;
                     foreach ($rules as $rule) {
                         //    We should only ever have one Dynamic Filter Rule anyway
                         $toptenRuleType = $rule->getGrouping();
@@ -772,10 +791,10 @@ class AutoFilter
                     if ($ruleOperator === AutoFilter\Column\Rule::AUTOFILTER_COLUMN_RULE_TOPTEN_PERCENT) {
                         $ruleValue = floor($ruleValue * ($dataRowCount / 100));
                     }
-                    if ($ruleValue < 1) {
+                    if (!is_array($ruleValue) && $ruleValue < 1) {
                         $ruleValue = 1;
                     }
-                    if ($ruleValue > 500) {
+                    if (!is_array($ruleValue) && $ruleValue > 500) {
                         $ruleValue = 500;
                     }
 

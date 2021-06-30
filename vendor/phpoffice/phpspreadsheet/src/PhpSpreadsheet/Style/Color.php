@@ -71,14 +71,16 @@ class Color extends Supervisor
      */
     public function getSharedComponent()
     {
-        switch ($this->parentPropertyName) {
-            case 'endColor':
-                return $this->parent->getSharedComponent()->getEndColor();
-            case 'color':
-                return $this->parent->getSharedComponent()->getColor();
-            case 'startColor':
-                return $this->parent->getSharedComponent()->getStartColor();
+        /** @var Border|Fill $sharedComponent */
+        $sharedComponent = $this->parent->getSharedComponent();
+        if ($this->parentPropertyName === 'endColor') {
+            return $sharedComponent->getEndColor();
         }
+        if ($this->parentPropertyName === 'startColor') {
+            return $sharedComponent->getStartColor();
+        }
+
+        return $sharedComponent->getColor();
     }
 
     /**
@@ -167,7 +169,7 @@ class Color extends Supervisor
             return $this->getSharedComponent()->getRGB();
         }
 
-        return substr($this->argb, 2);
+        return substr($this->argb ?? '', 2);
     }
 
     /**
@@ -200,7 +202,7 @@ class Color extends Supervisor
      * @param bool $hex Flag indicating whether the component should be returned as a hex or a
      *                                    decimal value
      *
-     * @return string The extracted colour component
+     * @return int|string The extracted colour component
      */
     private static function getColourComponent($RGB, $offset, $hex = true)
     {
@@ -216,7 +218,7 @@ class Color extends Supervisor
      * @param bool $hex Flag indicating whether the component should be returned as a hex or a
      *                                    decimal value
      *
-     * @return string The red colour component
+     * @return int|string The red colour component
      */
     public static function getRed($RGB, $hex = true)
     {
@@ -230,7 +232,7 @@ class Color extends Supervisor
      * @param bool $hex Flag indicating whether the component should be returned as a hex or a
      *                                    decimal value
      *
-     * @return string The green colour component
+     * @return int|string The green colour component
      */
     public static function getGreen($RGB, $hex = true)
     {
@@ -244,7 +246,7 @@ class Color extends Supervisor
      * @param bool $hex Flag indicating whether the component should be returned as a hex or a
      *                                    decimal value
      *
-     * @return string The blue colour component
+     * @return int|string The blue colour component
      */
     public static function getBlue($RGB, $hex = true)
     {
@@ -262,9 +264,13 @@ class Color extends Supervisor
     public static function changeBrightness($hex, $adjustPercentage)
     {
         $rgba = (strlen($hex) === 8);
+        $adjustPercentage = max(-1.0, min(1.0, $adjustPercentage));
 
+        /** @var int $red */
         $red = self::getRed($hex, false);
+        /** @var int $green */
         $green = self::getGreen($hex, false);
+        /** @var int $blue */
         $blue = self::getBlue($hex, false);
         if ($adjustPercentage > 0) {
             $red += (255 - $red) * $adjustPercentage;
@@ -274,22 +280,6 @@ class Color extends Supervisor
             $red += $red * $adjustPercentage;
             $green += $green * $adjustPercentage;
             $blue += $blue * $adjustPercentage;
-        }
-
-        if ($red < 0) {
-            $red = 0;
-        } elseif ($red > 255) {
-            $red = 255;
-        }
-        if ($green < 0) {
-            $green = 0;
-        } elseif ($green > 255) {
-            $green = 255;
-        }
-        if ($blue < 0) {
-            $blue = 0;
-        } elseif ($blue > 255) {
-            $blue = 255;
         }
 
         $rgb = strtoupper(
@@ -403,5 +393,13 @@ class Color extends Supervisor
             $this->argb .
             __CLASS__
         );
+    }
+
+    protected function exportArray1(): array
+    {
+        $exportedArray = [];
+        $this->exportArray2($exportedArray, 'argb', $this->getARGB());
+
+        return $exportedArray;
     }
 }
