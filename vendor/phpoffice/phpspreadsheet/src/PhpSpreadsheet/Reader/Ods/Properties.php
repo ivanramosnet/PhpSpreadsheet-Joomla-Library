@@ -54,14 +54,8 @@ class Properties
                     $docProps->setLastModifiedBy($propertyValue);
 
                     break;
-                case 'creation-date':
-                    $creationDate = strtotime($propertyValue);
-                    $docProps->setCreated($creationDate);
-                    $docProps->setModified($creationDate);
-
-                    break;
-                case 'keyword':
-                    $docProps->setKeywords($propertyValue);
+                case 'date':
+                    $docProps->setModified($propertyValue);
 
                     break;
                 case 'description':
@@ -90,8 +84,7 @@ class Properties
 
                 break;
             case 'creation-date':
-                $creationDate = strtotime($propertyValue);
-                $docProps->setCreated($creationDate);
+                $docProps->setCreated($propertyValue);
 
                 break;
             case 'user-defined':

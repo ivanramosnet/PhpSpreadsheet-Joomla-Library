@@ -2,6 +2,7 @@
 
 namespace PhpOffice\PhpSpreadsheet;
 
+use PhpOffice\PhpSpreadsheet\Calculation\Calculation;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\Cell\DataType;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
@@ -68,7 +69,7 @@ class ReferenceHelper
      */
     public static function columnReverseSort($a, $b)
     {
-        return 1 - strcasecmp(strlen($a) . $a, strlen($b) . $b);
+        return -strcasecmp(strlen($a) . $a, strlen($b) . $b);
     }
 
     /**
@@ -107,7 +108,7 @@ class ReferenceHelper
         [$bc, $br] = sscanf($b, '%[A-Z]%d');
 
         if ($ar === $br) {
-            return 1 - strcasecmp(strlen($ac) . $ac, strlen($bc) . $bc);
+            return -strcasecmp(strlen($ac) . $ac, strlen($bc) . $bc);
         }
 
         return ($ar < $br) ? 1 : -1;
@@ -129,13 +130,17 @@ class ReferenceHelper
         [$cellColumn, $cellRow] = Coordinate::coordinateFromString($cellAddress);
         $cellColumnIndex = Coordinate::columnIndexFromString($cellColumn);
         //    Is cell within the range of rows/columns if we're deleting
-        if ($pNumRows < 0 &&
+        if (
+            $pNumRows < 0 &&
             ($cellRow >= ($beforeRow + $pNumRows)) &&
-            ($cellRow < $beforeRow)) {
+            ($cellRow < $beforeRow)
+        ) {
             return true;
-        } elseif ($pNumCols < 0 &&
+        } elseif (
+            $pNumCols < 0 &&
             ($cellColumnIndex >= ($beforeColumnIndex + $pNumCols)) &&
-            ($cellColumnIndex < $beforeColumnIndex)) {
+            ($cellColumnIndex < $beforeColumnIndex)
+        ) {
             return true;
         }
 
@@ -370,17 +375,16 @@ class ReferenceHelper
         $allCoordinates = $pSheet->getCoordinates();
 
         // Get coordinate of $pBefore
-        [$beforeColumn, $beforeRow] = Coordinate::coordinateFromString($pBefore);
-        $beforeColumnIndex = Coordinate::columnIndexFromString($beforeColumn);
+        [$beforeColumn, $beforeRow] = Coordinate::indexesFromString($pBefore);
 
         // Clear cells if we are removing columns or rows
         $highestColumn = $pSheet->getHighestColumn();
         $highestRow = $pSheet->getHighestRow();
 
         // 1. Clear column strips if we are removing columns
-        if ($pNumCols < 0 && $beforeColumnIndex - 2 + $pNumCols > 0) {
+        if ($pNumCols < 0 && $beforeColumn - 2 + $pNumCols > 0) {
             for ($i = 1; $i <= $highestRow - 1; ++$i) {
-                for ($j = $beforeColumnIndex - 1 + $pNumCols; $j <= $beforeColumnIndex - 2; ++$j) {
+                for ($j = $beforeColumn - 1 + $pNumCols; $j <= $beforeColumn - 2; ++$j) {
                     $coordinate = Coordinate::stringFromColumnIndex($j + 1) . $i;
                     $pSheet->removeConditionalStyles($coordinate);
                     if ($pSheet->cellExists($coordinate)) {
@@ -393,7 +397,7 @@ class ReferenceHelper
 
         // 2. Clear row strips if we are removing rows
         if ($pNumRows < 0 && $beforeRow - 1 + $pNumRows > 0) {
-            for ($i = $beforeColumnIndex - 1; $i <= Coordinate::columnIndexFromString($highestColumn) - 1; ++$i) {
+            for ($i = $beforeColumn - 1; $i <= Coordinate::columnIndexFromString($highestColumn) - 1; ++$i) {
                 for ($j = $beforeRow + $pNumRows; $j <= $beforeRow - 1; ++$j) {
                     $coordinate = Coordinate::stringFromColumnIndex($i + 1) . $j;
                     $pSheet->removeConditionalStyles($coordinate);
@@ -422,7 +426,7 @@ class ReferenceHelper
             $newCoordinate = Coordinate::stringFromColumnIndex($cellIndex + $pNumCols) . ($cell->getRow() + $pNumRows);
 
             // Should the cell be updated? Move value and cellXf index from one cell to another.
-            if (($cellIndex >= $beforeColumnIndex) && ($cell->getRow() >= $beforeRow)) {
+            if (($cellIndex >= $beforeColumn) && ($cell->getRow() >= $beforeRow)) {
                 // Update cell styles
                 $pSheet->getCell($newCoordinate)->setXfIndex($cell->getXfIndex());
 
@@ -452,15 +456,15 @@ class ReferenceHelper
         $highestColumn = $pSheet->getHighestColumn();
         $highestRow = $pSheet->getHighestRow();
 
-        if ($pNumCols > 0 && $beforeColumnIndex - 2 > 0) {
+        if ($pNumCols > 0 && $beforeColumn - 2 > 0) {
             for ($i = $beforeRow; $i <= $highestRow - 1; ++$i) {
                 // Style
-                $coordinate = Coordinate::stringFromColumnIndex($beforeColumnIndex - 1) . $i;
+                $coordinate = Coordinate::stringFromColumnIndex($beforeColumn - 1) . $i;
                 if ($pSheet->cellExists($coordinate)) {
                     $xfIndex = $pSheet->getCell($coordinate)->getXfIndex();
                     $conditionalStyles = $pSheet->conditionalStylesExists($coordinate) ?
                         $pSheet->getConditionalStyles($coordinate) : false;
-                    for ($j = $beforeColumnIndex; $j <= $beforeColumnIndex - 1 + $pNumCols; ++$j) {
+                    for ($j = $beforeColumn; $j <= $beforeColumn - 1 + $pNumCols; ++$j) {
                         $pSheet->getCellByColumnAndRow($j, $i)->setXfIndex($xfIndex);
                         if ($conditionalStyles) {
                             $cloned = [];
@@ -475,7 +479,7 @@ class ReferenceHelper
         }
 
         if ($pNumRows > 0 && $beforeRow - 1 > 0) {
-            for ($i = $beforeColumnIndex; $i <= Coordinate::columnIndexFromString($highestColumn); ++$i) {
+            for ($i = $beforeColumn; $i <= Coordinate::columnIndexFromString($highestColumn); ++$i) {
                 // Style
                 $coordinate = Coordinate::stringFromColumnIndex($i) . ($beforeRow - 1);
                 if ($pSheet->cellExists($coordinate)) {
@@ -497,28 +501,28 @@ class ReferenceHelper
         }
 
         // Update worksheet: column dimensions
-        $this->adjustColumnDimensions($pSheet, $pBefore, $beforeColumnIndex, $pNumCols, $beforeRow, $pNumRows);
+        $this->adjustColumnDimensions($pSheet, $pBefore, $beforeColumn, $pNumCols, $beforeRow, $pNumRows);
 
         // Update worksheet: row dimensions
-        $this->adjustRowDimensions($pSheet, $pBefore, $beforeColumnIndex, $pNumCols, $beforeRow, $pNumRows);
+        $this->adjustRowDimensions($pSheet, $pBefore, $beforeColumn, $pNumCols, $beforeRow, $pNumRows);
 
         //    Update worksheet: page breaks
-        $this->adjustPageBreaks($pSheet, $pBefore, $beforeColumnIndex, $pNumCols, $beforeRow, $pNumRows);
+        $this->adjustPageBreaks($pSheet, $pBefore, $beforeColumn, $pNumCols, $beforeRow, $pNumRows);
 
         //    Update worksheet: comments
-        $this->adjustComments($pSheet, $pBefore, $beforeColumnIndex, $pNumCols, $beforeRow, $pNumRows);
+        $this->adjustComments($pSheet, $pBefore, $beforeColumn, $pNumCols, $beforeRow, $pNumRows);
 
         // Update worksheet: hyperlinks
-        $this->adjustHyperlinks($pSheet, $pBefore, $beforeColumnIndex, $pNumCols, $beforeRow, $pNumRows);
+        $this->adjustHyperlinks($pSheet, $pBefore, $beforeColumn, $pNumCols, $beforeRow, $pNumRows);
 
         // Update worksheet: data validations
-        $this->adjustDataValidations($pSheet, $pBefore, $beforeColumnIndex, $pNumCols, $beforeRow, $pNumRows);
+        $this->adjustDataValidations($pSheet, $pBefore, $beforeColumn, $pNumCols, $beforeRow, $pNumRows);
 
         // Update worksheet: merge cells
-        $this->adjustMergeCells($pSheet, $pBefore, $beforeColumnIndex, $pNumCols, $beforeRow, $pNumRows);
+        $this->adjustMergeCells($pSheet, $pBefore, $beforeColumn, $pNumCols, $beforeRow, $pNumRows);
 
         // Update worksheet: protected cells
-        $this->adjustProtectedCells($pSheet, $pBefore, $beforeColumnIndex, $pNumCols, $beforeRow, $pNumRows);
+        $this->adjustProtectedCells($pSheet, $pBefore, $beforeColumn, $pNumCols, $beforeRow, $pNumRows);
 
         // Update worksheet: autofilter
         $autoFilter = $pSheet->getAutoFilter();
@@ -600,11 +604,11 @@ class ReferenceHelper
             }
         }
 
-        // Update workbook: named ranges
-        if (count($pSheet->getParent()->getNamedRanges()) > 0) {
-            foreach ($pSheet->getParent()->getNamedRanges() as $namedRange) {
-                if ($namedRange->getWorksheet()->getHashCode() == $pSheet->getHashCode()) {
-                    $namedRange->setRange($this->updateCellReference($namedRange->getRange(), $pBefore, $pNumCols, $pNumRows));
+        // Update workbook: define names
+        if (count($pSheet->getParent()->getDefinedNames()) > 0) {
+            foreach ($pSheet->getParent()->getDefinedNames() as $definedName) {
+                if ($definedName->getWorksheet() !== null && $definedName->getWorksheet()->getHashCode() === $pSheet->getHashCode()) {
+                    $definedName->setValue($this->updateCellReference($definedName->getValue(), $pBefore, $pNumCols, $pNumRows));
                 }
             }
         }
@@ -649,7 +653,7 @@ class ReferenceHelper
                                 $toString .= $modified3 . ':' . $modified4;
                                 //    Max worksheet size is 1,048,576 rows by 16,384 columns in Excel 2007, so our adjustments need to be at least one digit more
                                 $column = 100000;
-                                $row = 10000000 + trim($match[3], '$');
+                                $row = 10000000 + (int) trim($match[3], '$');
                                 $cellIndex = $column . $row;
 
                                 $newCellTokens[$cellIndex] = preg_quote($toString, '/');
@@ -700,7 +704,7 @@ class ReferenceHelper
                                 [$column, $row] = Coordinate::coordinateFromString($match[3]);
                                 //    Max worksheet size is 1,048,576 rows by 16,384 columns in Excel 2007, so our adjustments need to be at least one digit more
                                 $column = Coordinate::columnIndexFromString(trim($column, '$')) + 100000;
-                                $row = trim($row, '$') + 10000000;
+                                $row = (int) trim($row, '$') + 10000000;
                                 $cellIndex = $column . $row;
 
                                 $newCellTokens[$cellIndex] = preg_quote($toString, '/');
@@ -726,7 +730,7 @@ class ReferenceHelper
                                 [$column, $row] = Coordinate::coordinateFromString($match[3]);
                                 //    Max worksheet size is 1,048,576 rows by 16,384 columns in Excel 2007, so our adjustments need to be at least one digit more
                                 $column = Coordinate::columnIndexFromString(trim($column, '$')) + 100000;
-                                $row = trim($row, '$') + 10000000;
+                                $row = (int) trim($row, '$') + 10000000;
                                 $cellIndex = $row . $column;
 
                                 $newCellTokens[$cellIndex] = preg_quote($toString, '/');
@@ -752,6 +756,141 @@ class ReferenceHelper
 
         //    Then rebuild the formula string
         return implode('"', $formulaBlocks);
+    }
+
+    /**
+     * Update all cell references within a formula, irrespective of worksheet.
+     */
+    public function updateFormulaReferencesAnyWorksheet(string $formula = '', int $insertColumns = 0, int $insertRows = 0): string
+    {
+        $formula = $this->updateCellReferencesAllWorksheets($formula, $insertColumns, $insertRows);
+
+        if ($insertColumns !== 0) {
+            $formula = $this->updateColumnRangesAllWorksheets($formula, $insertColumns);
+        }
+
+        if ($insertRows !== 0) {
+            $formula = $this->updateRowRangesAllWorksheets($formula, $insertRows);
+        }
+
+        return $formula;
+    }
+
+    private function updateCellReferencesAllWorksheets(string $formula, int $insertColumns, int $insertRows): string
+    {
+        $splitCount = preg_match_all(
+            '/' . Calculation::CALCULATION_REGEXP_CELLREF_RELATIVE . '/mui',
+            $formula,
+            $splitRanges,
+            PREG_OFFSET_CAPTURE
+        );
+
+        $columnLengths = array_map('strlen', array_column($splitRanges[6], 0));
+        $rowLengths = array_map('strlen', array_column($splitRanges[7], 0));
+        $columnOffsets = array_column($splitRanges[6], 1);
+        $rowOffsets = array_column($splitRanges[7], 1);
+
+        $columns = $splitRanges[6];
+        $rows = $splitRanges[7];
+
+        while ($splitCount > 0) {
+            --$splitCount;
+            $columnLength = $columnLengths[$splitCount];
+            $rowLength = $rowLengths[$splitCount];
+            $columnOffset = $columnOffsets[$splitCount];
+            $rowOffset = $rowOffsets[$splitCount];
+            $column = $columns[$splitCount][0];
+            $row = $rows[$splitCount][0];
+
+            if (!empty($column) && $column[0] !== '$') {
+                $column = Coordinate::stringFromColumnIndex(Coordinate::columnIndexFromString($column) + $insertColumns);
+                $formula = substr($formula, 0, $columnOffset) . $column . substr($formula, $columnOffset + $columnLength);
+            }
+            if (!empty($row) && $row[0] !== '$') {
+                $row += $insertRows;
+                $formula = substr($formula, 0, $rowOffset) . $row . substr($formula, $rowOffset + $rowLength);
+            }
+        }
+
+        return $formula;
+    }
+
+    private function updateColumnRangesAllWorksheets(string $formula, int $insertColumns): string
+    {
+        $splitCount = preg_match_all(
+            '/' . Calculation::CALCULATION_REGEXP_COLUMNRANGE_RELATIVE . '/mui',
+            $formula,
+            $splitRanges,
+            PREG_OFFSET_CAPTURE
+        );
+
+        $fromColumnLengths = array_map('strlen', array_column($splitRanges[1], 0));
+        $fromColumnOffsets = array_column($splitRanges[1], 1);
+        $toColumnLengths = array_map('strlen', array_column($splitRanges[2], 0));
+        $toColumnOffsets = array_column($splitRanges[2], 1);
+
+        $fromColumns = $splitRanges[1];
+        $toColumns = $splitRanges[2];
+
+        while ($splitCount > 0) {
+            --$splitCount;
+            $fromColumnLength = $fromColumnLengths[$splitCount];
+            $toColumnLength = $toColumnLengths[$splitCount];
+            $fromColumnOffset = $fromColumnOffsets[$splitCount];
+            $toColumnOffset = $toColumnOffsets[$splitCount];
+            $fromColumn = $fromColumns[$splitCount][0];
+            $toColumn = $toColumns[$splitCount][0];
+
+            if (!empty($fromColumn) && $fromColumn[0] !== '$') {
+                $fromColumn = Coordinate::stringFromColumnIndex(Coordinate::columnIndexFromString($fromColumn) + $insertColumns);
+                $formula = substr($formula, 0, $fromColumnOffset) . $fromColumn . substr($formula, $fromColumnOffset + $fromColumnLength);
+            }
+            if (!empty($toColumn) && $toColumn[0] !== '$') {
+                $toColumn = Coordinate::stringFromColumnIndex(Coordinate::columnIndexFromString($toColumn) + $insertColumns);
+                $formula = substr($formula, 0, $toColumnOffset) . $toColumn . substr($formula, $toColumnOffset + $toColumnLength);
+            }
+        }
+
+        return $formula;
+    }
+
+    private function updateRowRangesAllWorksheets(string $formula, int $insertRows): string
+    {
+        $splitCount = preg_match_all(
+            '/' . Calculation::CALCULATION_REGEXP_ROWRANGE_RELATIVE . '/mui',
+            $formula,
+            $splitRanges,
+            PREG_OFFSET_CAPTURE
+        );
+
+        $fromRowLengths = array_map('strlen', array_column($splitRanges[1], 0));
+        $fromRowOffsets = array_column($splitRanges[1], 1);
+        $toRowLengths = array_map('strlen', array_column($splitRanges[2], 0));
+        $toRowOffsets = array_column($splitRanges[2], 1);
+
+        $fromRows = $splitRanges[1];
+        $toRows = $splitRanges[2];
+
+        while ($splitCount > 0) {
+            --$splitCount;
+            $fromRowLength = $fromRowLengths[$splitCount];
+            $toRowLength = $toRowLengths[$splitCount];
+            $fromRowOffset = $fromRowOffsets[$splitCount];
+            $toRowOffset = $toRowOffsets[$splitCount];
+            $fromRow = $fromRows[$splitCount][0];
+            $toRow = $toRows[$splitCount][0];
+
+            if (!empty($fromRow) && $fromRow[0] !== '$') {
+                $fromRow += $insertRows;
+                $formula = substr($formula, 0, $fromRowOffset) . $fromRow . substr($formula, $fromRowOffset + $fromRowLength);
+            }
+            if (!empty($toRow) && $toRow[0] !== '$') {
+                $toRow += $insertRows;
+                $formula = substr($formula, 0, $toRowOffset) . $toRow . substr($formula, $toRowOffset + $toRowLength);
+            }
+        }
+
+        return $formula;
     }
 
     /**
@@ -881,7 +1020,7 @@ class ReferenceHelper
 
         // Create new row reference
         if ($updateRow) {
-            $newRow = $newRow + $pNumRows;
+            $newRow = (int) $newRow + $pNumRows;
         }
 
         // Return new reference

@@ -291,7 +291,7 @@ class Rels extends WriterPart
     /**
      * Write drawing relationships to XML format.
      *
-     * @param int &$chartRef Chart ID
+     * @param int $chartRef Chart ID
      * @param bool $includeCharts Flag indicating if we should write charts
      *
      * @return string XML Output
@@ -317,8 +317,10 @@ class Rels extends WriterPart
         $i = 1;
         $iterator = $pWorksheet->getDrawingCollection()->getIterator();
         while ($iterator->valid()) {
-            if ($iterator->current() instanceof \PhpOffice\PhpSpreadsheet\Worksheet\Drawing
-                || $iterator->current() instanceof MemoryDrawing) {
+            if (
+                $iterator->current() instanceof \PhpOffice\PhpSpreadsheet\Worksheet\Drawing
+                || $iterator->current() instanceof MemoryDrawing
+            ) {
                 // Write relationship for image drawing
                 /** @var \PhpOffice\PhpSpreadsheet\Worksheet\Drawing $drawing */
                 $drawing = $iterator->current();
@@ -423,9 +425,7 @@ class Rels extends WriterPart
     }
 
     /**
-     * @param $objWriter
      * @param \PhpOffice\PhpSpreadsheet\Worksheet\Drawing $drawing
-     * @param $i
      *
      * @return int
      */

@@ -92,10 +92,8 @@ class OLERead
 
     /**
      * Read the file.
-     *
-     * @param $pFilename string Filename
      */
-    public function read($pFilename): void
+    public function read(string $pFilename): void
     {
         File::assertFile($pFilename);
 
@@ -180,7 +178,7 @@ class OLERead
 
         // read the directory stream
         $block = $this->rootStartBlock;
-        $this->entry = $this->_readData($block);
+        $this->entry = $this->readData($block);
 
         $this->readPropertySets();
     }
@@ -190,7 +188,7 @@ class OLERead
      *
      * @param int $stream
      *
-     * @return string
+     * @return null|string
      */
     public function getStream($stream)
     {
@@ -201,7 +199,7 @@ class OLERead
         $streamData = '';
 
         if ($this->props[$stream]['size'] < self::SMALL_BLOCK_THRESHOLD) {
-            $rootdata = $this->_readData($this->props[$this->rootentry]['startBlock']);
+            $rootdata = $this->readData($this->props[$this->rootentry]['startBlock']);
 
             $block = $this->props[$stream]['startBlock'];
 
@@ -241,7 +239,7 @@ class OLERead
      *
      * @return string Data for standard stream
      */
-    private function _readData($bl)
+    private function readData($bl)
     {
         $block = $bl;
         $data = '';
