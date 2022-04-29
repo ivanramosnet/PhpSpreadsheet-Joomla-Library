@@ -5,9 +5,9 @@
         'type' => 'library',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
-        'reference' => '8b35f05304bf4cf39c052645d67f4cc565ca1b93',
+        'reference' => 'bc2250d5b9881a09ed85062a6aa98825e8655d54',
         'name' => '__root__',
-        'dev' => true,
+        'dev' => false,
     ),
     'versions' => array(
         '__root__' => array(
@@ -16,7 +16,7 @@
             'type' => 'library',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
-            'reference' => '8b35f05304bf4cf39c052645d67f4cc565ca1b93',
+            'reference' => 'bc2250d5b9881a09ed85062a6aa98825e8655d54',
             'dev_requirement' => false,
         ),
         'ezyang/htmlpurifier' => array(
@@ -65,12 +65,12 @@
             'dev_requirement' => false,
         ),
         'phpoffice/phpspreadsheet' => array(
-            'pretty_version' => '1.20.0',
-            'version' => '1.20.0.0',
+            'pretty_version' => '1.23.0',
+            'version' => '1.23.0.0',
             'type' => 'library',
             'install_path' => __DIR__ . '/../phpoffice/phpspreadsheet',
             'aliases' => array(),
-            'reference' => '44436f270bb134b4a94670f3d020a85dfa0a3c02',
+            'reference' => '21e4cf62699eebf007db28775f7d1554e612ed9e',
             'dev_requirement' => false,
         ),
         'psr/http-client' => array(
@@ -110,8 +110,8 @@
             'dev_requirement' => false,
         ),
         'symfony/polyfill-mbstring' => array(
-            'pretty_version' => 'v1.24.0',
-            'version' => '1.24.0.0',
+            'pretty_version' => 'v1.25.0',
+            'version' => '1.25.0.0',
             'type' => 'library',
             'install_path' => __DIR__ . '/../symfony/polyfill-mbstring',
             'aliases' => array(),

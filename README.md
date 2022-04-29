@@ -12,7 +12,7 @@ You can download the current version / older version of PhpSpreadsheet-Joomla-Li
 Version
 -------
 
-* The current Joomla! Library is using PhpSpreadsheet 1.20.0.
+* The current Joomla! Library is using PhpSpreadsheet 1.23.0.
 
 Usage
 -----
@@ -56,3 +56,10 @@ Credits
 License
 -------
 PhpSpreadsheet is licensed under [LGPL (GNU LESSER GENERAL PUBLIC LICENSE)](https://github.com/PHPOffice/PhpSpreadsheet/blob/master/license.md)
+
+Note
+----
+
+The library folder was build using the given composer.json file and executing:
+
+    composer update --no-dev --prefer-dist
